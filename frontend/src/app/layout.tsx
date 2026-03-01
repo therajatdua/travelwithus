@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { Header, Footer, AuthModal, ChatBot } from "@/components/organisms";
+import { ScrollProgress } from "@/components/atoms";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,6 +42,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
+            <ScrollProgress />
             <Header />
             {children}
             <Footer />
