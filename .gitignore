@@ -9,15 +9,26 @@
 node_modules/
 */node_modules/
 
-# Build outputs
+# Build / compiled outputs
 dist/
 build/
 .next/
+server/dist/
+frontend/.next/
 
 # Logs
 *.log
 logs/
+server/server_logs.txt
 server_logs.txt
+
+# Supabase local dev
+supabase/.branches/
+supabase/.temp/
+
+# Dev / scratch scripts
+server/test-ai.ts
+server/test-*.ts
 
 # OS files
 .DS_Store
