@@ -1,0 +1,7 @@
+{
+  "watch": ["index.ts", "controllers", "middlewares", "routes", "services", "lib", "types.ts"],
+  "ext": "ts,json",
+  "ignore": ["dist", "node_modules", "*.log", ".env", ".env.*"],
+  "exec": "ts-node index.ts",
+  "delay": "250"
+}

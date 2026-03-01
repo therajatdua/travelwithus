@@ -1,0 +1,389 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TravelWithUs – Dual-Axis Theming Engine
+   ============================================================
+   Axis 1: Color Mode  → data-mode="light" | "dark"
+            Set by inline <script> BEFORE first paint (no flash).
+            JS-only — no @media fallback needed.
+   Axis 2: City Theme  → data-theme="mumbai" | "rio" | …
+   Intersection: [data-theme][data-mode="dark"] for city-dark.
+   ============================================================ */
+
+/* ─────────────────────────────────────────────────────────────
+   AXIS 1 — LIGHT BASE (default)
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Surface & Background */
+  --background: #FAFAF8;
+  --surface: #F2ECE6;
+  --surface-alt: #E8DFD4;
+
+  /* Brand / Primary */
+  --primary: #0F3057;
+  --primary-hover: #0A2040;
+  --accent: #C6A75E;
+  --accent-hover: #B89640;
+
+  /* Text */
+  --heading: #1C1C1C;
+  --body: #5A5A5A;
+  --muted: #9A9A9A;
+  --text-inverse: #FFFFFF;
+
+  /* Border */
+  --border: #D6CFC5;
+
+  /* Hero Gradient */
+  --hero-gradient: linear-gradient(135deg, #0F3057 0%, #1A4A7A 50%, #C6A75E 100%);
+
+  /* Radii */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Spacing */
+  --spacing-card: 1.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AXIS 1 — DARK BASE
+   Specificity 0-1-0 — same level as city overrides, but
+   appears BEFORE them so cities always win by cascade.
+   ───────────────────────────────────────────────────────────── */
+[data-mode="dark"] {
+  --background: #121212;
+  --surface: #1E1E1E;
+  --surface-alt: #2A2A2A;
+
+  --primary: #4A90D9;
+  --primary-hover: #5BA3EC;
+  --accent: #D4B76A;
+  --accent-hover: #E0C97E;
+
+  --heading: #F5F5F5;
+  --body: #D0D0D0;
+  --muted: #8A8A8A;
+  --text-inverse: #121212;
+
+  --border: #333333;
+  --hero-gradient: linear-gradient(135deg, #4A90D9 0%, #5BA3EC 50%, #D4B76A 100%);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AXIS 2 — CITY LIGHT OVERRIDES  (specificity 0-1-0)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Mumbai – Warm gold, marigold energy ───────────────────── */
+[data-theme="mumbai"] {
+  --primary: #E87817;
+  --primary-hover: #CC6A12;
+  --accent: #D4A853;
+  --accent-hover: #C09540;
+  --hero-gradient: linear-gradient(135deg, #FF9933 0%, #E87817 50%, #D4A853 100%);
+  --background: #FFF8F0;
+  --surface: #FAEBD7;
+  --surface-alt: #F0DCC0;
+  --heading: #3D2B1F;
+  --body: #5C4033;
+  --muted: #9A8070;
+  --text-inverse: #FFFFFF;
+  --border: #E0C9A6;
+}
+
+/* ── Rio – Tropical green, carnival sun ────────────────────── */
+[data-theme="rio"] {
+  --primary: #009739;
+  --primary-hover: #007A2E;
+  --accent: #FFDF00;
+  --accent-hover: #E6C900;
+  --hero-gradient: linear-gradient(135deg, #009739 0%, #00C04B 50%, #FFDF00 100%);
+  --background: #F0FFF4;
+  --surface: #DCFCE7;
+  --surface-alt: #BBF7D0;
+  --heading: #1A3A2A;
+  --body: #2D5A3D;
+  --muted: #5A9A6A;
+  --text-inverse: #FFFFFF;
+  --border: #86EFAC;
+}
+
+/* ── Thailand – Serene teal, temple gold ───────────────────── */
+[data-theme="thailand"] {
+  --primary: #1A6B5A;
+  --primary-hover: #145548;
+  --accent: #DAA520;
+  --accent-hover: #C4940A;
+  --hero-gradient: linear-gradient(135deg, #1A6B5A 0%, #2E8B6E 50%, #DAA520 100%);
+  --background: #F0FDFA;
+  --surface: #CCFBF1;
+  --surface-alt: #99F6E4;
+  --heading: #1C3D36;
+  --body: #3A6055;
+  --muted: #5A9A8A;
+  --text-inverse: #FFFFFF;
+  --border: #5EEAD4;
+}
+
+/* ── Italy – Terracotta warmth, olive rustic ───────────────── */
+[data-theme="italy"] {
+  --primary: #C72C2C;
+  --primary-hover: #A52222;
+  --accent: #7B8C3B;
+  --accent-hover: #6A7A30;
+  --hero-gradient: linear-gradient(135deg, #C72C2C 0%, #D4734E 50%, #7B8C3B 100%);
+  --background: #FFF5F0;
+  --surface: #FDE8E0;
+  --surface-alt: #FCCAB8;
+  --heading: #3B2222;
+  --body: #5C3D3D;
+  --muted: #9A7070;
+  --text-inverse: #FFFFFF;
+  --border: #E8B8A8;
+}
+
+/* ── Tokyo – Neon pink, sakura minimalism ──────────────────── */
+[data-theme="tokyo"] {
+  --primary: #D63384;
+  --primary-hover: #B5246C;
+  --accent: #7B2FF7;
+  --accent-hover: #6820D8;
+  --hero-gradient: linear-gradient(135deg, #D63384 0%, #7B2FF7 50%, #FF6B9D 100%);
+  --background: #FFF5FA;
+  --surface: #FCE7F3;
+  --surface-alt: #FBCFE8;
+  --heading: #2D1B30;
+  --body: #5A4060;
+  --muted: #9A70A0;
+  --text-inverse: #FFFFFF;
+  --border: #F9A8D4;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   INTERSECTING SELECTORS — CITY + DARK  (specificity 0-2-0)
+   Always wins over both [data-mode="dark"] and [data-theme].
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Mumbai Dark ───────────────────────────────────────────── */
+[data-theme="mumbai"][data-mode="dark"] {
+  --background: #141414;
+  --surface: #1E1A14;
+  --surface-alt: #2A2418;
+  --primary: #F4A300;
+  --primary-hover: #FFB82E;
+  --accent: #E8C36A;
+  --accent-hover: #F0D080;
+  --heading: #F5E6D0;
+  --body: #C9B89A;
+  --muted: #8A7A60;
+  --text-inverse: #141414;
+  --border: #3D3020;
+  --hero-gradient: linear-gradient(135deg, #F4A300 0%, #E87817 50%, #E8C36A 100%);
+}
+
+/* ── Rio Dark ──────────────────────────────────────────────── */
+[data-theme="rio"][data-mode="dark"] {
+  --background: #0F1A14;
+  --surface: #142A1E;
+  --surface-alt: #1A3828;
+  --primary: #00C04B;
+  --primary-hover: #00E05A;
+  --accent: #FFE94D;
+  --accent-hover: #FFF06A;
+  --heading: #D0F0D8;
+  --body: #A0C8AA;
+  --muted: #608A6A;
+  --text-inverse: #0F1A14;
+  --border: #1E3A28;
+  --hero-gradient: linear-gradient(135deg, #00C04B 0%, #009739 50%, #FFE94D 100%);
+}
+
+/* ── Thailand Dark ─────────────────────────────────────────── */
+[data-theme="thailand"][data-mode="dark"] {
+  --background: #0F1614;
+  --surface: #142420;
+  --surface-alt: #1A3430;
+  --primary: #2BBFA0;
+  --primary-hover: #3DDAB8;
+  --accent: #E8C040;
+  --accent-hover: #F0D060;
+  --heading: #C8F0E8;
+  --body: #90C0B0;
+  --muted: #5A8A7A;
+  --text-inverse: #0F1614;
+  --border: #1E3830;
+  --hero-gradient: linear-gradient(135deg, #2BBFA0 0%, #1A6B5A 50%, #E8C040 100%);
+}
+
+/* ── Italy Dark ────────────────────────────────────────────── */
+[data-theme="italy"][data-mode="dark"] {
+  --background: #141010;
+  --surface: #1E1616;
+  --surface-alt: #2A2020;
+  --primary: #E05A3A;
+  --primary-hover: #F07050;
+  --accent: #98A850;
+  --accent-hover: #A8BA60;
+  --heading: #F0D0C8;
+  --body: #C0A098;
+  --muted: #8A6A60;
+  --text-inverse: #141010;
+  --border: #3D2828;
+  --hero-gradient: linear-gradient(135deg, #E05A3A 0%, #C72C2C 50%, #98A850 100%);
+}
+
+/* ── Tokyo Dark ────────────────────────────────────────────── */
+[data-theme="tokyo"][data-mode="dark"] {
+  --background: #140F18;
+  --surface: #1E1524;
+  --surface-alt: #2A2034;
+  --primary: #FF69B4;
+  --primary-hover: #FF85C8;
+  --accent: #A855F7;
+  --accent-hover: #BE70FF;
+  --heading: #F0D8E8;
+  --body: #C0A0B8;
+  --muted: #8A6080;
+  --text-inverse: #140F18;
+  --border: #3D2838;
+  --hero-gradient: linear-gradient(135deg, #FF69B4 0%, #A855F7 50%, #FF85C8 100%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Tailwind v4 Theme Bridge
+   Maps CSS vars → Tailwind tokens so utilities like
+   bg-primary, text-heading, border-border etc. work.
+   
+   "theme-*" aliases for Day 3 components:
+     bg-theme-bg, bg-theme-surface, bg-theme-primary,
+     bg-theme-hover, bg-theme-accent, text-theme-heading,
+     text-theme-body
+   ───────────────────────────────────────────────────────────── */
+@theme inline {
+  /* ── Original tokens ─────────────────────────────────────── */
+  --color-background: var(--background);
+  --color-foreground: var(--heading);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-heading: var(--heading);
+  --color-body-text: var(--body);
+  --color-muted: var(--muted);
+  --color-text-inverse: var(--text-inverse);
+  --color-border: var(--border);
+
+  /* ── theme-* aliases (Task 1) ────────────────────────────── */
+  --color-theme-bg: var(--background);
+  --color-theme-surface: var(--surface);
+  --color-theme-primary: var(--primary);
+  --color-theme-hover: var(--primary-hover);
+  --color-theme-accent: var(--accent);
+  --color-theme-heading: var(--heading);
+  --color-theme-body: var(--body);
+
+  /* ── Fonts ───────────────────────────────────────────────── */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Global Base Styles
+   ───────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--background);
+  color: var(--body);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Utility Classes
+   ───────────────────────────────────────────────────────────── */
+
+/* Theme-aware card */
+.card-theme {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-card);
+  transition: background-color 0.5s ease, border-color 0.5s ease,
+              box-shadow 0.5s ease, color 0.5s ease;
+}
+
+.card-theme:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Accent button */
+.btn-accent {
+  background-color: var(--primary);
+  color: var(--text-inverse);
+  border-radius: var(--radius-full);
+  padding: 0.625rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-accent:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Hero gradient banner */
+.hero-gradient {
+  background: var(--hero-gradient);
+  color: #FFFFFF;
+}
+
+/* Smooth theme transitions for major surfaces */
+header, footer, main, aside, nav, section,
+.theme-transition {
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
+}
+
+/* ── Travyy ChatBot Animations ─────────────────────────────── */
+@keyframes travyy-slide-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes travyy-slide-down {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(24px) scale(0.95); }
+}
+@keyframes travyy-fab-pop {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(0.93); }
+  100% { transform: scale(1);    }
+}
+@keyframes travyy-dot-bounce {
+  0%, 80%, 100% { transform: translateY(0);    opacity: .6; }
+  40%            { transform: translateY(-6px); opacity: 1;  }
+}
+@keyframes travyy-pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  100% { transform: scale(1.55); opacity: 0;   }
+}
+@keyframes travyy-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.travyy-open  { animation: travyy-slide-up   0.32s cubic-bezier(.34,1.56,.64,1) both; }
+.travyy-close { animation: travyy-slide-down 0.22s ease-in both; }
+.travyy-fab-pop { animation: travyy-fab-pop  0.38s ease both; }
+.travyy-msg  { animation: travyy-msg-in      0.22s ease both; }
