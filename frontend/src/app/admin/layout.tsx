@@ -1,34 +1,28 @@
 /* ============================================================
-   (admin) Route Group Layout – Server-Side Role Guard
+   /admin Route Group Layout – Server-Side Role Guard
    ============================================================
-   Runs on every /admin/* request. Checks Supabase session
-   and profiles.role before rendering children.
-   No client-side workaround is possible after this guard.
+   Runs on every /admin/* request. Verifies the Firebase ID token
+   from the __session cookie and checks profiles.role in Firestore.
    ============================================================ */
 
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { verifyIdToken, getAdminDb } from "@/lib/firebase/admin";
 import Link from "next/link";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("__session")?.value;
 
-  if (!supabase) {
-    // Supabase not configured – deny access
-    redirect("/login?next=/admin/dashboard");
-  }
+  const decoded = await verifyIdToken(token);
+  if (!decoded) redirect("/login?next=/admin/dashboard");
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/admin/dashboard");
+  const db          = getAdminDb();
+  const profileSnap = await db.collection("profiles").doc(decoded.uid).get();
+  const role        = profileSnap.data()?.role;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") redirect("/");
+  if (role !== "admin") redirect("/");
 
   return (
     <div className="flex min-h-screen">

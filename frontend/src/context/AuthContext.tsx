@@ -1,10 +1,11 @@
 /* ============================================================
-   AuthContext – Real Supabase Auth State  (v2)
+   AuthContext – Firebase Auth State
    ============================================================
-   • Subscribes to supabase.auth.onAuthStateChange for
-     automatic session sync across tabs and refreshes.
-   • Exposes the real Supabase User object.
-   • No hardcoded credentials or demo cookies.
+   • Subscribes to Firebase's onIdTokenChanged for automatic
+     session sync across tabs and token refreshes.
+   • Sets a __session cookie with the current ID token so
+     Next.js Server Components and middleware can verify auth.
+   • Exposes the Firebase User object.
    ============================================================ */
 
 "use client";
@@ -17,21 +18,21 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { onIdTokenChanged, signOut, type User } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 interface AuthContextValue {
-  /** Real Supabase User object, null when logged out */
-  supabaseUser: User | null;
-  /** Convenience: display name (full_name meta > email > null) */
+  /** Firebase User object, null when logged out */
+  firebaseUser: User | null;
+  /** Convenience: display name (displayName > email > null) */
   displayName: string | null;
   /** True when a session exists */
   isAuthenticated: boolean;
-  /** True before the first session check resolves */
+  /** True before the first auth state check resolves */
   isLoading: boolean;
   /** Whether the auth modal is open */
   isModalOpen: boolean;
-  /** Sign out – clears Supabase session */
+  /** Sign out – clears Firebase session and __session cookie */
   logout: () => Promise<void>;
   /** Open the auth modal */
   openAuthModal: () => void;
@@ -41,59 +42,59 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/** Writes (or clears) the __session cookie used by middleware / Server Components. */
+function setSessionCookie(token: string | null) {
+  if (token) {
+    document.cookie = `__session=${token}; path=/; max-age=${60 * 60}; SameSite=Strict`;
+  } else {
+    document.cookie = "__session=; path=/; max-age=0; SameSite=Strict";
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading,    setIsLoading]    = useState(true);
   const [isModalOpen,  setIsModalOpen]  = useState(false);
 
-  /* ── Subscribe to Supabase auth state changes ──────────── */
+  /* ── Subscribe to Firebase auth state + token refresh ──── */
   useEffect(() => {
-    const supabase = createClient();
-
-    /* Initial session check */
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSupabaseUser(session?.user ?? null);
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      if (user) {
+        const token = await user.getIdToken();
+        setSessionCookie(token);
+      } else {
+        setSessionCookie(null);
+      }
+      setFirebaseUser(user);
       setIsLoading(false);
     });
 
-    /* Live subscription */
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSupabaseUser(session?.user ?? null);
-        setIsLoading(false);
-      },
-    );
-
-    return () => subscription.unsubscribe();
+    return unsubscribe;
   }, []);
 
   /* ── Show auth modal when not logged in after load ──────── */
   useEffect(() => {
-    if (!isLoading && !supabaseUser) {
+    if (!isLoading && !firebaseUser) {
       setIsModalOpen(true);
     }
-  }, [isLoading, supabaseUser]);
+  }, [isLoading, firebaseUser]);
 
   const logout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    // onAuthStateChange will clear supabaseUser automatically
+    await signOut(auth);
+    // onIdTokenChanged will clear firebaseUser and the cookie automatically
   }, []);
 
   const openAuthModal  = useCallback(() => setIsModalOpen(true),  []);
   const closeAuthModal = useCallback(() => setIsModalOpen(false), []);
 
-  const displayName =
-    (supabaseUser?.user_metadata?.full_name as string | undefined) ??
-    supabaseUser?.email ??
-    null;
+  const displayName = firebaseUser?.displayName ?? firebaseUser?.email ?? null;
 
   return (
     <AuthContext.Provider
       value={{
-        supabaseUser,
+        firebaseUser,
         displayName,
-        isAuthenticated: supabaseUser !== null,
+        isAuthenticated: firebaseUser !== null,
         isLoading,
         isModalOpen,
         logout,
@@ -111,5 +112,6 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error("useAuth must be used within <AuthProvider />");
   return ctx;
 }
+
 
 

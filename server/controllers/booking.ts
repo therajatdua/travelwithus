@@ -7,7 +7,7 @@
    ============================================================ */
 
 import type { Request, Response } from "express";
-import { supabaseAdmin } from "../lib/supabase";
+import { getFirestore } from "../lib/firebase";
 import { generateItinerary } from "../services/ai";
 import type { BookingInput, UserPreferences, ApiResponse } from "../types";
 
@@ -44,19 +44,25 @@ export const createBooking = async (
     const userId = req.userId!;
 
     /* 1. Look up the package by city slug */
-    const { data: pkg, error: pkgErr } = await supabaseAdmin
-      .from("packages")
-      .select("id, name, base_price, slug, theme_key")
-      .eq("slug", input.citySlug)
-      .single();
+    const db = getFirestore();
+    const pkgSnap = await db
+      .collection("packages")
+      .where("slug", "==", input.citySlug)
+      .limit(1)
+      .get();
 
-    if (pkgErr || !pkg) {
+    if (pkgSnap.empty) {
       res.status(404).json({
         success: false,
         error: `Package not found for slug "${input.citySlug}".`,
       } satisfies ApiResponse);
       return;
     }
+
+    const pkgDoc  = pkgSnap.docs[0];
+    const pkg     = { id: pkgDoc.id, ...pkgDoc.data() } as {
+      id: string; name: string; base_price: number; slug: string; theme_key: string;
+    };
 
     /* 2. Server-side price calculation */
     const { adults, children, seniors } = input.passengers;
@@ -76,34 +82,37 @@ export const createBooking = async (
       adults,
       children: children ?? 0,
       seniors: seniors ?? 0,
-      nights: 4, // default 5-day package (4 nights)
+      nights: 4,
     };
 
     const aiResult = await generateItinerary(aiPrefs);
 
-    /* 4. Insert booking via admin client (bypasses RLS) */
-    const { data: booking, error: insertErr } = await supabaseAdmin
-      .from("bookings")
-      .insert({
-        user_id: userId,
-        package_id: pkg.id,
-        origin_city: input.originCity,
-        transport_mode: input.transportMode,
-        pax_details: {
-          adults,
-          children: children ?? 0,
-          seniors: seniors ?? 0,
-        },
-        base_price: pkg.base_price,
-        total_price: totalPrice,
-        ai_customization: aiResult,
-        status: "pending",
-      })
-      .select("id, status, total_price, ai_customization, created_at")
-      .single();
+    /* 4. Insert booking into Firestore */
+    const now = new Date().toISOString();
+    const bookingRef = await db.collection("bookings").add({
+      user_id:          userId,
+      package_id:       pkg.id,
+      package_name:     pkg.name,
+      package_slug:     pkg.slug,
+      package_theme:    pkg.theme_key,
+      origin_city:      input.originCity,
+      transport_mode:   input.transportMode,
+      pax_details: {
+        adults,
+        children: children ?? 0,
+        seniors:  seniors ?? 0,
+      },
+      base_price:       pkg.base_price,
+      total_price:      totalPrice,
+      ai_customization: aiResult,
+      status:           "pending",
+      payment_status:   "unpaid",
+      created_at:       now,
+      updated_at:       now,
+    });
 
-    if (insertErr) {
-      console.error("[Booking] Insert failed:", insertErr.message);
+    const bookingSnap = await bookingRef.get();
+    if (!bookingSnap.exists) {
       res.status(500).json({
         success: false,
         error: "Failed to create booking. Please try again.",
@@ -111,15 +120,17 @@ export const createBooking = async (
       return;
     }
 
+    const booking = bookingSnap.data()!;
+
     /* 5. Success response */
     res.status(201).json({
       success: true,
       data: {
-        booking_id: booking.id,
-        status: booking.status,
-        total_price: booking.total_price,
+        booking_id:       bookingSnap.id,
+        status:           booking.status,
+        total_price:      booking.total_price,
         ai_customization: booking.ai_customization,
-        created_at: booking.created_at,
+        created_at:       booking.created_at,
       },
     } satisfies ApiResponse);
   } catch (err) {
@@ -140,31 +151,14 @@ export const getUserBookings = async (
   try {
     const userId = req.userId!;
 
-    const { data, error } = await supabaseAdmin
-      .from("bookings")
-      .select(
-        `
-        id,
-        status,
-        origin_city,
-        transport_mode,
-        pax_details,
-        total_price,
-        created_at,
-        packages ( name, slug, theme_key )
-      `,
-      )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    const db = getFirestore();
+    const snap = await db
+      .collection("bookings")
+      .where("user_id", "==", userId)
+      .orderBy("created_at", "desc")
+      .get();
 
-    if (error) {
-      console.error("[Booking] Fetch failed:", error.message);
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch bookings.",
-      } satisfies ApiResponse);
-      return;
-    }
+    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
     res.json({ success: true, data } satisfies ApiResponse);
   } catch (err) {
@@ -186,28 +180,21 @@ export const getBookingById = async (
     const userId = req.userId!;
     const { id } = req.params;
 
-    const { data, error } = await supabaseAdmin
-      .from("bookings")
-      .select(
-        `
-        id,
-        status,
-        origin_city,
-        transport_mode,
-        pax_details,
-        base_price,
-        total_price,
-        ai_customization,
-        created_at,
-        updated_at,
-        packages ( name, slug, theme_key )
-      `,
-      )
-      .eq("id", id)
-      .eq("user_id", userId)
-      .single();
+    const db   = getFirestore();
+    const snap = await db.collection("bookings").doc(id).get();
 
-    if (error || !data) {
+    if (!snap.exists) {
+      res.status(404).json({
+        success: false,
+        error: "Booking not found.",
+      } satisfies ApiResponse);
+      return;
+    }
+
+    const data = { id: snap.id, ...snap.data() } as Record<string, unknown>;
+
+    /* Ownership check */
+    if (data.user_id !== userId) {
       res.status(404).json({
         success: false,
         error: "Booking not found.",

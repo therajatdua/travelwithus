@@ -2,14 +2,14 @@
    Middleware: authenticateUser + validateRequest
    ============================================================
    authenticateUser  → Extracts Bearer token, verifies it via
-                       Supabase, attaches userId to req.
+                       Firebase Admin Auth, attaches userId to req.
    validateRequest   → HOF that takes a Zod schema and validates
                        req.body before the handler runs.
    ============================================================ */
 
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import type { ZodSchema } from "zod";
-import { supabase } from "../lib/supabase";
+import { getAdminAuth } from "../lib/firebase";
 
 /* ──────────────────────────────────────────────────────────────
    AUTH MIDDLEWARE
@@ -33,24 +33,20 @@ export const authenticateUser: RequestHandler = async (
 
     const token = authHeader.split(" ")[1];
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
+    try {
+      const decoded = await getAdminAuth().verifyIdToken(token);
 
-    if (error || !user) {
+      /* Attach user info to the request for downstream handlers */
+      req.userId = decoded.uid;
+      req.firebaseUser = { uid: decoded.uid, email: decoded.email ?? undefined };
+
+      next();
+    } catch {
       res.status(401).json({
         success: false,
         error: "Invalid or expired token.",
       });
-      return;
     }
-
-    /* Attach user info to the request for downstream handlers */
-    req.userId = user.id;
-    req.supabaseUser = { id: user.id, email: user.email };
-
-    next();
   } catch (err) {
     console.error("[Auth Middleware]", err);
     res.status(500).json({ success: false, error: "Auth verification failed." });

@@ -1,18 +1,24 @@
 /* ============================================================
-   Organism: AuthModal  (v2 – Real Supabase Auth)
+   Organism: AuthModal  (v3 – Firebase Auth)
    ============================================================
    Full-screen overlay with a travel background image.
-   Email + password sign-in / sign-up via Supabase.
-   Auth state updates automatically via onAuthStateChange.
+   Email + password sign-in / sign-up via Firebase Auth.
+   Auth state updates automatically via onIdTokenChanged.
    ============================================================ */
 
 "use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Button, InputField } from "@/components/atoms";
 import { useAuth } from "@/context/AuthContext";
-import { createClient } from "@/lib/supabase/client";
+import { auth, db } from "@/lib/firebase/client";
 
 type Tab = "signin" | "signup";
 
@@ -33,7 +39,7 @@ export default function AuthModal() {
     setEmail(""); setPassword(""); setConfirmPassword(""); setError("");
   }, [isModalOpen, tab]);
 
-  /* ── Supabase auth handler ────────────────────────────── */
+  /* ── Firebase auth handler ───────────────────────────── */
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
@@ -47,30 +53,38 @@ export default function AuthModal() {
       }
 
       setLoading(true);
-      const supabase = createClient();
 
-      if (tab === "signup") {
-        const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+      try {
+        if (tab === "signup") {
+          const { user } = await createUserWithEmailAndPassword(auth, email, password);
+          /* Set displayName from email prefix */
+          await updateProfile(user, { displayName: email.split("@")[0] });
+          /* Create a profile doc in Firestore */
+          await setDoc(doc(db, "profiles", user.uid), {
+            uid:        user.uid,
+            email:      user.email,
+            full_name:  email.split("@")[0],
+            role:       "user",
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
+          });
+          closeAuthModal();
+          return;
+        }
+
+        /* Sign In */
+        const { user } = await signInWithEmailAndPassword(auth, email, password);
+
+        /* Check role for redirect */
+        const profileSnap = await getDoc(doc(db, "profiles", user.uid));
+        closeAuthModal();
+        if (profileSnap.data()?.role === "admin") {
+          router.push("/admin/dashboard");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Authentication failed.");
+      } finally {
         setLoading(false);
-        if (signUpErr) { setError(signUpErr.message); return; }
-        setError("");
-        closeAuthModal();
-        return;
-      }
-
-      /* Sign In */
-      const { data, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-      setLoading(false);
-      if (signInErr) { setError(signInErr.message); return; }
-
-      /* Check role for redirect */
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles").select("role").eq("user_id", data.user.id).single();
-        closeAuthModal();
-        if (profile?.role === "admin") router.push("/admin/dashboard");
-      } else {
-        closeAuthModal();
       }
     },
     [tab, email, password, confirmPassword, closeAuthModal, router],

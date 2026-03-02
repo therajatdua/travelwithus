@@ -1,18 +1,23 @@
 /* ============================================================
-   Next.js Middleware – Supabase Auth & Role-Based Route Guard
+   Next.js Middleware – Firebase Auth & Route Guard
    ============================================================
    Protected routes:
-     /admin/*              → must be authenticated + role='admin'
+     /admin/*              → must be authenticated
      /bookings/*           → must be authenticated
      /packages/[city]/book → must be authenticated
+
+   Note: Middleware runs in the Edge runtime where firebase-admin
+   is unavailable. We check __session cookie presence here.
+   Full token verification + role checks happen in the Server
+   Component layouts (admin/layout.tsx).
    ============================================================ */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/middleware";
+import { getSessionFromRequest, redirectToLogin } from "@/lib/firebase/middleware";
 
-const ADMIN_PREFIX   = "/admin";
-const AUTH_PREFIXES  = ["/bookings"];
-const BOOK_PATTERN   = /^\/packages\/[^/]+\/book$/;
+const ADMIN_PREFIX  = "/admin";
+const AUTH_PREFIXES = ["/bookings"];
+const BOOK_PATTERN  = /^\/packages\/[^/]+\/book$/;
 
 function routeType(pathname: string): "admin" | "protected" | "public" {
   if (pathname.startsWith(ADMIN_PREFIX)) return "admin";
@@ -22,46 +27,18 @@ function routeType(pathname: string): "admin" | "protected" | "public" {
 }
 
 export async function middleware(request: NextRequest) {
-  const { supabase, response } = await createClient(request);
-
   const kind = routeType(request.nextUrl.pathname);
-  if (kind === "public") return response;
+  if (kind === "public") return NextResponse.next();
 
-  /* ── Verify Supabase session ──────────────────────────── */
-  let user = null;
-  if (supabase) {
-    try {
-      user = (await supabase.auth.getUser()).data.user;
-    } catch {
-      user = null;
-    }
+  /* ── Check __session cookie presence ─────────────────────── */
+  const { isPresent } = getSessionFromRequest(request);
+
+  if (!isPresent) {
+    return redirectToLogin(request, request.nextUrl.pathname);
   }
 
-  if (!user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  /* ── Admin role check ─────────────────────────────────── */
-  if (kind === "admin" && supabase) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      /* Authenticated but not an admin → redirect to home */
-      const homeUrl = request.nextUrl.clone();
-      homeUrl.pathname = "/";
-      homeUrl.search = "";
-      return NextResponse.redirect(homeUrl);
-    }
-  }
-
-  return response;
+  /* Admin role is verified by the Server Component in admin/layout.tsx */
+  return NextResponse.next();
 }
 
 export const config = {
@@ -69,4 +46,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

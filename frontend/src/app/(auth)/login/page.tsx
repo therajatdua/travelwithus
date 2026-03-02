@@ -1,16 +1,21 @@
 /* ============================================================
-   /login – Real Supabase Email + Password Auth  (v2)
+   /login – Firebase Email + Password Auth
    ============================================================
-   No demo mode. Auth state propagates via onAuthStateChange
-   in AuthContext – no manual login() call needed.
+   Auth state propagates via onIdTokenChanged in AuthContext.
    ============================================================ */
 
 "use client";
 
 import { useState, Suspense, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Button, InputField } from "@/components/atoms";
-import { createClient } from "@/lib/supabase/client";
+import { auth, db } from "@/lib/firebase/client";
 import { BRAND_NAME } from "@/lib/constants";
 
 type Tab = "signin" | "signup";
@@ -45,35 +50,31 @@ function LoginForm() {
     e.preventDefault();
     setError(""); setMessage(""); setLoading(true);
 
-    const supabase = createClient();
-
     try {
       if (tab === "signup") {
-        const { error: err } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        const { user } = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(user, { displayName: email.split("@")[0] });
+        await setDoc(doc(db, "profiles", user.uid), {
+          uid:        user.uid,
+          email:      user.email,
+          full_name:  email.split("@")[0],
+          role:       "user",
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
         });
-        if (err) throw err;
-        setMessage("Check your email for a confirmation link!");
+        setMessage("Account created! You are now signed in.");
+        router.push(nextPath);
+        router.refresh();
         return;
       }
 
       /* Sign In */
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) throw err;
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
 
       /* Redirect admin → dashboard, others → intended path */
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("user_id", data.user.id)
-          .single();
-
-        router.push(profile?.role === "admin" ? "/admin/dashboard" : nextPath);
-        router.refresh();
-      }
+      const profileSnap = await getDoc(doc(db, "profiles", user.uid));
+      router.push(profileSnap.data()?.role === "admin" ? "/admin/dashboard" : nextPath);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {

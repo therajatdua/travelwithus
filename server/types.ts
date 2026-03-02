@@ -80,8 +80,8 @@ declare global {
     interface Request {
       /** Authenticated user ID (set by authenticateUser middleware) */
       userId?: string;
-      /** Full Supabase user object */
-      supabaseUser?: { id: string; email?: string };
+      /** Decoded Firebase user info */
+      firebaseUser?: { uid: string; email?: string };
     }
   }
 }

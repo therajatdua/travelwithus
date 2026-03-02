@@ -1,12 +1,13 @@
 /* ============================================================
-   /admin/dashboard – Real-data Admin Dashboard  (v2)
+   /admin/dashboard – Real-data Admin Dashboard
    ============================================================
-   Server Component – all data fetched server-side.
-   Role guard already enforced by (admin)/layout.tsx.
+   Server Component – all data fetched server-side via Firestore.
+   Role guard already enforced by admin/layout.tsx.
    ============================================================ */
 
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { verifyIdToken, getAdminDb } from "@/lib/firebase/admin";
 import { AIHealthBadge } from "@/components/admin/AIHealthBadge";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -15,42 +16,45 @@ type Booking = {
   created_at: string;
   status: string;
   payment_status: string;
-  total_amount: number | null;
-  profiles: { full_name: string | null }[] | null;
-  packages: { title: string }[] | null;
+  total_price: number | null;
+  user_full_name?: string | null;
+  package_name?: string | null;
 };
 
 /* ── Page ───────────────────────────────────────────────── */
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  if (!supabase) redirect("/login?next=/admin/dashboard");
+  const cookieStore = await cookies();
+  const token = cookieStore.get("__session")?.value;
+  const decoded = await verifyIdToken(token);
+  if (!decoded) redirect("/login?next=/admin/dashboard");
+
+  const db = getAdminDb();
 
   /* ── Stats queries (parallel) ──────────────────────────── */
-  const [bookingsResult, packagesResult, usersResult, revenueResult] =
+  const [bookingsSnap, packagesSnap, usersSnap, recentSnap] =
     await Promise.all([
-      supabase.from("bookings").select("id", { count: "exact", head: true }),
-      supabase.from("packages").select("id", { count: "exact", head: true }),
-      supabase.from("profiles").select("user_id", { count: "exact", head: true }),
-      supabase
-        .from("bookings")
-        .select("total_amount")
-        .eq("payment_status", "paid"),
+      db.collection("bookings").count().get(),
+      db.collection("packages").count().get(),
+      db.collection("profiles").count().get(),
+      db.collection("bookings").orderBy("created_at", "desc").limit(10).get(),
     ]);
 
-  const totalBookings = bookingsResult.count ?? 0;
-  const totalPackages = packagesResult.count ?? 0;
-  const totalUsers    = usersResult.count ?? 0;
-  const totalRevenue  = (revenueResult.data ?? []).reduce(
-    (sum, r) => sum + (r.total_amount ?? 0),
-    0,
-  );
+  const totalBookings = bookingsSnap.data().count;
+  const totalPackages = packagesSnap.data().count;
+  const totalUsers    = usersSnap.data().count;
 
-  /* ── Recent bookings ─────────────────────────────────── */
-  const { data: recentBookings } = await supabase
-    .from("bookings")
-    .select("id, created_at, status, payment_status, total_amount, profiles(full_name), packages(title)")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  /* Revenue from paid bookings */
+  const paidSnap   = await db.collection("bookings").where("payment_status", "==", "paid").get();
+  const totalRevenue = paidSnap.docs.reduce((sum, d) => sum + (d.data().total_price ?? 0), 0);
+
+  const recentBookings: Booking[] = recentSnap.docs.map((d) => ({
+    id:             d.id,
+    created_at:     d.data().created_at ?? "",
+    status:         d.data().status ?? "",
+    payment_status: d.data().payment_status ?? "",
+    total_price:    d.data().total_price ?? null,
+    package_name:   d.data().package_name ?? null,
+  }));
 
   const stats = [
     { label: "Total Bookings",   value: totalBookings.toLocaleString(),                             icon: "✈️" },
@@ -65,7 +69,7 @@ export default async function AdminDashboardPage() {
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--heading)]">Dashboard</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">Live data from Supabase</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Live data from Firebase</p>
         </div>
         <AIHealthBadge />
       </div>
@@ -103,13 +107,13 @@ export default async function AdminDashboardPage() {
                 {(recentBookings as Booking[]).map((b) => (
                   <tr key={b.id}>
                     <td className="px-4 py-3 font-mono text-xs">{b.id.slice(0, 8)}…</td>
-                    <td className="px-4 py-3">{b.profiles?.[0]?.full_name ?? "—"}</td>
-                    <td className="px-4 py-3">{b.packages?.[0]?.title ?? "—"}</td>
+                    <td className="px-4 py-3">{b.user_full_name ?? "—"}</td>
+                    <td className="px-4 py-3">{b.package_name ?? "—"}</td>
                     <td className="px-4 py-3 text-[var(--muted)]">
                       {new Date(b.created_at).toLocaleDateString("en-IN")}
                     </td>
                     <td className="px-4 py-3">
-                      {b.total_amount != null ? `₹${b.total_amount.toLocaleString("en-IN")}` : "—"}
+                      {b.total_price != null ? `₹${b.total_price.toLocaleString("en-IN")}` : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <PaymentBadge status={b.payment_status} />

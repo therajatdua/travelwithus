@@ -1,29 +1,19 @@
 /* ============================================================
-   /auth/callback – Supabase Auth Email Confirmation Handler
+   /auth/callback – Firebase Auth Action Handler
    ============================================================
-   Handles the redirect from Supabase email confirmation.
-   Exchanges the auth code for a session.
+   Firebase email-verification and password-reset links include
+   an `oobCode` parameter. This route completes those actions
+   by delegating to Firebase and then redirecting the user.
    ============================================================ */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
-  if (code) {
-    const supabase = await createClient();
-    if (!supabase) {
-      return NextResponse.redirect(`${origin}/login`);
-    }
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
-  }
-
-  /* Redirect to login on error */
-  return NextResponse.redirect(`${origin}/login`);
+  /* Firebase handles oobCode validation client-side via the
+     Firebase SDK (applyActionCode / confirmPasswordReset).
+     Here we simply redirect to the intended destination.       */
+  return NextResponse.redirect(`${origin}${next}`);
 }

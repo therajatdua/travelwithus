@@ -4,15 +4,14 @@
    Abstracts the POST /api/bookings call. Handles loading, error,
    and the booking result (including AI itinerary).
 
-   Auth: Reads Supabase session token automatically via
-         @supabase/ssr browser client.
+   Auth: Reads Firebase ID token from the current user.
    ============================================================ */
 
 "use client";
 
 import { useState, useCallback } from "react";
 import { API_URL } from "@/lib/constants";
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/firebase/client";
 
 /* ── Types ──────────────────────────────────────────────────── */
 
@@ -72,21 +71,19 @@ export function useBooking() {
       setValidationErrors(null);
 
       try {
-        /* Build headers — grab Supabase session token if available */
+        /* Build headers — grab Firebase ID token if available */
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
 
         try {
-          const supabase = createClient();
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.access_token) {
-            headers["Authorization"] = `Bearer ${session.access_token}`;
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            const idToken = await currentUser.getIdToken();
+            headers["Authorization"] = `Bearer ${idToken}`;
           }
         } catch {
-          /* Supabase not configured — continue without auth header */
+          /* Firebase not configured — continue without auth header */
         }
 
         const res = await fetch(`${API_URL}/api/bookings`, {
