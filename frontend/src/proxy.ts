@@ -1,5 +1,5 @@
 /* ============================================================
-   Next.js Middleware – Firebase Auth Guard
+   Next.js Proxy – Firebase Auth Guard
    ============================================================
    Route matcher per production policy:
      /admin/:path*
@@ -22,24 +22,19 @@ function routeType(pathname: string): "admin" | "protected" | "public" {
   return "public";
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const kind = routeType(request.nextUrl.pathname);
   if (kind === "public") return NextResponse.next();
 
-  /* ── Check __session cookie presence ─────────────────────── */
   const { isPresent } = getSessionFromRequest(request);
 
   if (!isPresent) {
     return redirectToLogin(request, request.nextUrl.pathname);
   }
 
-  /* Admin role is verified by the Server Component in admin/layout.tsx */
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/packages/:city/book",
-  ],
+  matcher: ["/admin/:path*", "/packages/:city/book"],
 };
