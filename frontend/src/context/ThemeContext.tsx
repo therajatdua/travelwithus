@@ -1,13 +1,13 @@
 /* ============================================================
-   ThemeContext – Dual-Axis Theme Engine
-   ─────────────────────────────────────────────────────────────
-   Axis 1  → ColorMode  (light | dark | system)
-              Persisted in localStorage. "system" defers to OS.
-              Initial data-mode is set by a blocking <script> in
-              layout.tsx to avoid FOUC.
-   Axis 2  → CityTheme  (ThemeKey | null)
-              Sets data-theme on <html>.
-   ============================================================ */
+  ThemeContext – Dual-Axis Theme Engine
+  ─────────────────────────────────────────────────────────────
+  Axis 1  → ColorMode  (light | dark)
+          First visit follows OS preference by default.
+          Initial data-mode is set by a blocking <script> in
+          layout.tsx to avoid FOUC.
+  Axis 2  → CityTheme  (ThemeKey | null)
+          Sets data-theme on <html>.
+  ============================================================ */
 
 "use client";
 
@@ -22,14 +22,14 @@ import {
 import type { ThemeKey } from "@/types";
 
 /* ── Types ──────────────────────────────────────────────────── */
-export type ColorMode = "light" | "dark" | "system";
+export type ColorMode = "light" | "dark";
 
 interface ThemeContextValue {
   /** Current color-mode preference (persisted) */
   colorMode: ColorMode;
   /** Resolved effective mode (always "light" or "dark") */
   resolvedMode: "light" | "dark";
-  /** Cycle or set the global color mode */
+  /** Set the global color mode */
   setColorMode: (mode: ColorMode) => void;
   /** Currently active city theme key, or null for home */
   theme: ThemeKey | null;
@@ -48,15 +48,11 @@ function getSystemPreference(): "light" | "dark" {
     : "light";
 }
 
-function getSavedMode(): ColorMode {
-  if (typeof window === "undefined") return "system";
+function getSavedMode(): "light" | "dark" | null {
+  if (typeof window === "undefined") return null;
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === "light" || saved === "dark" || saved === "system") return saved;
-  return "system";
-}
-
-function resolve(mode: ColorMode): "light" | "dark" {
-  return mode === "system" ? getSystemPreference() : mode;
+  if (saved === "light" || saved === "dark") return saved;
+  return null;
 }
 
 /** Read the data-mode the blocking <script> already set on <html> */
@@ -67,25 +63,28 @@ function getInitialResolved(): "light" | "dark" {
 
 /* ── Provider ───────────────────────────────────────────────── */
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const savedMode = getSavedMode();
   /* Initialise from what the blocking script already applied —
      this avoids a flash between server-render and first hydration. */
-  const [colorMode, setColorModeState] = useState<ColorMode>(getSavedMode);
+  const [colorMode, setColorModeState] = useState<ColorMode>(savedMode ?? getSystemPreference());
   const [resolvedMode, setResolvedMode] = useState<"light" | "dark">(getInitialResolved);
+  const [followSystem, setFollowSystem] = useState<boolean>(savedMode === null);
   const [theme, setThemeState] = useState<ThemeKey | null>(null);
 
-  /* Listen for OS preference changes when mode === "system" */
+  /* Listen for OS preference changes while following system */
   useEffect(() => {
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
-      if (colorMode === "system") {
+      if (followSystem) {
         const next = getSystemPreference();
+        setColorModeState(next);
         setResolvedMode(next);
         document.documentElement.setAttribute("data-mode", next);
       }
     };
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
-  }, [colorMode]);
+  }, [followSystem]);
 
   /* Apply data-mode to <html> whenever resolvedMode changes */
   useEffect(() => {
@@ -104,7 +103,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   /* Public setters */
   const setColorMode = useCallback((mode: ColorMode) => {
-    const resolved = resolve(mode);
+    const resolved = mode;
+    setFollowSystem(false);
     setColorModeState(mode);
     setResolvedMode(resolved);
     localStorage.setItem(STORAGE_KEY, mode);

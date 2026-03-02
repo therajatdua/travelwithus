@@ -14,28 +14,44 @@ export function AIHealthBadge() {
   const [status,  setStatus]  = useState<Status>("loading");
   const [latency, setLatency] = useState<number | null>(null);
 
-  const check = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/ai/health`, { cache: "no-store" });
-      const body = await res.json();
-      if (!res.ok) {
+  useEffect(() => {
+    let cancelled = false;
+
+    const runCheck = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/ai/health`, { cache: "no-store" });
+        const body = await res.json();
+        if (cancelled) return;
+
+        if (!res.ok) {
+          setStatus("down");
+          setLatency(null);
+          return;
+        }
+
+        const isOk = body.status === "ok";
+        setStatus(isOk ? "ok" : "down");
+        setLatency(body.latency_ms ?? null);
+      } catch {
+        if (cancelled) return;
         setStatus("down");
         setLatency(null);
-        return;
       }
-      const isOk = body.status === "ok";
-      setStatus(isOk ? "ok" : "down");
-      setLatency(body.latency_ms ?? null);
-    } catch {
-      setStatus("down");
-      setLatency(null);
-    }
-  };
+    };
 
-  useEffect(() => {
-    check();
-    const id = setInterval(check, 30_000); // poll every 30 s
-    return () => clearInterval(id);
+    const kickoff = setTimeout(() => {
+      void runCheck();
+    }, 0);
+
+    const id = setInterval(() => {
+      void runCheck();
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(kickoff);
+      clearInterval(id);
+    };
   }, []);
 
   const styles: Record<Status, string> = {

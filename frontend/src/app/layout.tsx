@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   title: "TravelWithUs | Global AI Travel Platform",
   description:
     "Discover curated travel packages with immersive destination themes. Mumbai, Rio, Thailand, Italy, Tokyo — your next adventure awaits.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

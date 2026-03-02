@@ -10,6 +10,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/atoms";
 import { useAuth } from "@/context/AuthContext";
@@ -24,26 +25,22 @@ const destinations = [
 ] as const;
 
 const MODE_CYCLE: Record<ColorMode, { icon: string; label: string; next: ColorMode }> = {
-  light:  { icon: "☀️", label: "Light", next: "dark"   },
-  dark:   { icon: "🌙", label: "Dark",  next: "system" },
-  system: { icon: "💻", label: "Auto",  next: "light"  },
+  light: { icon: "☀️", label: "Light", next: "dark" },
+  dark:  { icon: "🌙", label: "Dark",  next: "light" },
 };
 
 export default function Header() {
   const { isAuthenticated, displayName, openAuthModal, logout } = useAuth();
   const { colorMode, setColorMode } = useTheme();
-  const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const safeMode = mounted ? colorMode : ("system" as ColorMode);
+  const safeMode = colorMode as ColorMode;
   const { icon, label, next } = MODE_CYCLE[safeMode];
 
   return (
@@ -67,8 +64,15 @@ export default function Header() {
         {/* ── Brand ──────────────────────────────────────── */}
         <Link
           href="/"
-          className="group relative text-xl font-bold tracking-tight text-[var(--primary)] transition-all duration-300 hover:opacity-90"
+          className="group relative flex items-center gap-2 text-xl font-bold tracking-tight text-[var(--primary)] transition-all duration-300 hover:opacity-90"
         >
+          <Image
+            src="/favicon.ico"
+            alt="TravelWithUs"
+            width={22}
+            height={22}
+            className="rounded-sm"
+          />
           <span className="relative">
             TravelWithUs
             {/* Sparkle decoration on hover */}

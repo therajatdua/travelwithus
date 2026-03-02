@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export const metadata = { title: "Careers | TravelWithUs" };
 
 const roles = [
@@ -50,13 +48,13 @@ export default function CareersPage() {
         className="py-28 px-6 text-center"
         style={{ background: "linear-gradient(135deg, var(--primary) 0%, #1e40af 100%)" }}
       >
-        <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-200">We're hiring</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-200">We&apos;re hiring</p>
         <h1 className="text-4xl font-extrabold text-white sm:text-5xl">
           Help us make travel<br />
           <span className="text-yellow-300">effortless for everyone</span>
         </h1>
         <p className="mt-6 text-lg text-blue-100 max-w-xl mx-auto">
-          We're a small, ambitious team building AI-powered travel experiences. If you love travel and great engineering, you'll fit right in.
+          We&apos;re a small, ambitious team building AI-powered travel experiences. If you love travel and great engineering, you&apos;ll fit right in.
         </p>
       </section>
 
@@ -112,7 +110,7 @@ export default function CareersPage() {
             ))}
           </div>
           <p className="text-center mt-10 text-sm" style={{ color: "var(--muted)" }}>
-            Don't see a match?{" "}
+            Don&apos;t see a match?{" "}
             <a href="mailto:careers@travelwithus.app" className="underline" style={{ color: "var(--primary)" }}>
               Send us an open application
             </a>

@@ -27,7 +27,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-200">Our Story</p>
           <h1 className="text-4xl font-extrabold text-white sm:text-6xl leading-tight">
-            Travel shouldn't be<br />
+            Travel shouldn&apos;t be<br />
             <span className="text-yellow-300">complicated.</span>
           </h1>
           <p className="mt-6 text-lg text-blue-100 leading-relaxed">

@@ -26,6 +26,25 @@ const WELCOME: Message = {
   text: "Hey! ✈️ I'm Travyy, your AI travel buddy. Ask me anything — destinations, packing tips, local food, hidden gems, or itinerary ideas!",
 };
 
+function fallbackReply(input: string, city?: string): string {
+  const text = input.toLowerCase();
+  const place = city ? city.charAt(0).toUpperCase() + city.slice(1) : "your destination";
+
+  if (text.includes("best time") || text.includes("when to")) {
+    return `Great question! For ${place}, shoulder season is usually your best balance of weather and crowd size. If you share your exact month range, I can narrow it down day-by-day.`;
+  }
+  if (text.includes("packing") || text.includes("pack")) {
+    return `For ${place}: keep light layers, comfortable walking shoes, a universal adapter, and basic meds. I can give you a precise checklist if you tell me trip length and travel month.`;
+  }
+  if (text.includes("food") || text.includes("eat") || text.includes("restaurant")) {
+    return `For ${place}, start with local street food + one highly rated neighborhood spot. I can suggest a practical breakfast/lunch/dinner plan based on your budget style.`;
+  }
+  if (text.includes("budget") || text.includes("cost") || text.includes("price")) {
+    return `Prices vary by season and booking window, but I can help you estimate transport, stay, and daily spend ranges for ${place}. Tell me your travel dates and number of travelers.`;
+  }
+  return `I’m facing temporary high demand on live AI right now, but I can still help. Tell me your destination, dates, and traveler count, and I’ll suggest a practical starter plan.`;
+}
+
 export default function ChatBot() {
   const [open, setOpen]       = useState(false);
   const [closing, setClosing] = useState(false);
@@ -64,7 +83,11 @@ export default function ChatBot() {
   }, []);
 
   const toggle = useCallback(() => {
-    open ? closeChat() : openChat();
+    if (open) {
+      closeChat();
+      return;
+    }
+    openChat();
   }, [open, openChat, closeChat]);
 
   /* ── Send message ────────────────────────────────────────── */
@@ -82,14 +105,24 @@ export default function ChatBot() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ message: text, ...(city ? { city } : {}) }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { reply: string };
-      setMessages((p) => [...p, { id: nextId(), role: "bot", text: data.reply }]);
+      if (!res.ok) {
+        const fallback = fallbackReply(text, city);
+        setMessages((p) => [...p, { id: nextId(), role: "bot", text: fallback }]);
+        return;
+      }
+      const data = (await res.json()) as { reply?: string };
+      if (!data.reply) {
+        const fallback = fallbackReply(text, city);
+        setMessages((p) => [...p, { id: nextId(), role: "bot", text: fallback }]);
+        return;
+      }
+      const reply = data.reply;
+      setMessages((p) => [...p, { id: nextId(), role: "bot", text: reply }]);
     } catch (err) {
       console.error("[Travyy]", err);
       setMessages((p) => [
         ...p,
-        { id: nextId(), role: "bot", text: "Hmm, I hit a snag connecting to the server. Give it a sec and try again! 🛠️" },
+        { id: nextId(), role: "bot", text: fallbackReply(text, city) },
       ]);
     } finally {
       setLoading(false);

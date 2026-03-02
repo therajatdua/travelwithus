@@ -38,7 +38,7 @@ export default function ContactPage() {
       <div className="mx-auto max-w-5xl">
         <div className="text-center mb-16">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--primary)" }}>Get in touch</p>
-          <h1 className="text-4xl font-extrabold sm:text-5xl" style={{ color: "var(--heading)" }}>We'd love to hear from you</h1>
+          <h1 className="text-4xl font-extrabold sm:text-5xl" style={{ color: "var(--heading)" }}>We&apos;d love to hear from you</h1>
           <p className="mt-4 text-lg max-w-xl mx-auto" style={{ color: "var(--body)" }}>
             Have a question about a booking, a partnership enquiry, or just want to say hi? We reply within 24 hours.
           </p>
@@ -84,7 +84,7 @@ export default function ContactPage() {
                 <div className="text-6xl">✈️</div>
                 <h2 className="text-2xl font-bold" style={{ color: "var(--heading)" }}>Message sent!</h2>
                 <p className="text-sm" style={{ color: "var(--body)" }}>
-                  We'll get back to you at <strong>{form.email}</strong> within 24 hours.
+                  We&apos;ll get back to you at <strong>{form.email}</strong> within 24 hours.
                 </p>
                 <button
                   onClick={() => { setSent(false); setForm({ name: "", email: "", subject: "", message: "" }); }}
@@ -128,7 +128,7 @@ export default function ContactPage() {
                     rows={5}
                     value={form.message}
                     onChange={handleChange}
-                    placeholder="Tell us what's on your mind…"
+                    placeholder="Tell us what&apos;s on your mind…"
                     style={{ ...inputStyle, resize: "none" }}
                   />
                 </div>

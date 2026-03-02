@@ -65,13 +65,13 @@ function PackageResultCard({
   highlighted,
   searchDate,
   adults,
-  children,
+  childCount,
 }: {
   pkg: TravelPackage;
   highlighted: boolean;
   searchDate?: string;
   adults: number;
-  children: number;
+  childCount: number;
 }) {
   const router = useRouter();
   const { setTheme } = useTheme();
@@ -81,7 +81,7 @@ function PackageResultCard({
     const params = new URLSearchParams({
       ...(searchDate ? { date: searchDate } : {}),
       adults:   String(adults),
-      children: String(children),
+      children: String(childCount),
     });
     router.push(`/packages/${pkg.themeKey}/book?${params.toString()}`);
   };
@@ -220,7 +220,7 @@ function PackagesContent() {
                   highlighted
                   searchDate={date}
                   adults={adults}
-                  children={children}
+                  childCount={children}
                 />
               ))}
             </div>
@@ -242,7 +242,7 @@ function PackagesContent() {
                 highlighted={false}
                 searchDate={date}
                 adults={adults}
-                children={children}
+                childCount={children}
               />
             ))}
           </div>
@@ -255,14 +255,16 @@ function PackagesContent() {
 /* ── Suspense wrapper required by useSearchParams ───────── */
 export default function PackagesPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <div className="text-center" style={{ color: "var(--muted)" }}>
-          <div className="mb-3 text-3xl">✈️</div>
-          <p className="text-sm font-medium">Loading packages…</p>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+          <div className="text-center" style={{ color: "var(--muted)" }}>
+            <div className="mb-3 text-3xl">✈️</div>
+            <p className="text-sm font-medium">Loading packages…</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PackagesContent />
     </Suspense>
   );

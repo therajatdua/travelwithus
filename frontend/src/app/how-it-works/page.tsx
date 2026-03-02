@@ -46,7 +46,7 @@ export default function HowItWorksPage() {
           From idea to itinerary<br />in under 60 seconds
         </h1>
         <p className="mt-4 text-lg max-w-xl mx-auto" style={{ color: "var(--body)" }}>
-          Here's exactly how TravelWithUs turns your wanderlust into a confirmed booking.
+          Here&apos;s exactly how TravelWithUs turns your wanderlust into a confirmed booking.
         </p>
       </section>
 

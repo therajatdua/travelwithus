@@ -52,18 +52,18 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════
           HERO  — cinematic fullscreen with glass search
           ══════════════════════════════════════════════════════ */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
+      <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
 
         {/* Background — Ken Burns */}
         <div
-          className="absolute inset-0 -z-20 bg-cover bg-center ken-burns"
+          className="absolute inset-0 z-0 bg-cover bg-center ken-burns"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&q=90')" }}
           aria-hidden
         />
 
         {/* Multi-layer overlay for depth */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/75 via-black/55 to-black/80" aria-hidden />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0F3057]/40 via-transparent to-[#0F3057]/20" aria-hidden />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/75 via-black/55 to-black/80" aria-hidden />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0F3057]/40 via-transparent to-[#0F3057]/20" aria-hidden />
 
         {/* Luxury badge */}
         <div
@@ -172,7 +172,7 @@ export default function HomePage() {
             <Typography variant="h2" className="text-[var(--heading)]">Why travellers choose us</Typography>
           </ScrollReveal>
           <ScrollReveal direction="fade" delay={100} className="text-center mb-16">
-            <p className="max-w-lg mx-auto text-[var(--body)]">We built the travel experience we always wanted — and couldn't find.</p>
+            <p className="max-w-lg mx-auto text-[var(--body)]">We built the travel experience we always wanted — and couldn&apos;t find.</p>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -264,7 +264,7 @@ export default function HomePage() {
             <Typography variant="h2" className="text-[var(--heading)]">Real trips. Real people.</Typography>
           </ScrollReveal>
           <ScrollReveal direction="fade" delay={100} className="text-center mb-16">
-            <p className="max-w-lg mx-auto text-[var(--body)]">Don't take our word for it.</p>
+            <p className="max-w-lg mx-auto text-[var(--body)]">Don&apos;t take our word for it.</p>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -275,8 +275,8 @@ export default function HomePage() {
                   style={{ background: "var(--background)", border: "1px solid var(--border)" }}
                 >
                   {/* Opening quote */}
-                  <div className="text-5xl font-black leading-none" style={{ color: "var(--primary)", opacity: 0.15 }}>"</div>
-                  <p className="text-sm leading-relaxed -mt-6" style={{ color: "var(--body)" }}>"{t.quote}"</p>
+                    <div className="text-5xl font-black leading-none" style={{ color: "var(--primary)", opacity: 0.15 }}>&quot;</div>
+                    <p className="text-sm leading-relaxed -mt-6" style={{ color: "var(--body)" }}>&quot;{t.quote}&quot;</p>
                   <div className="flex items-center gap-3 mt-auto">
                     <div
                       className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-xs font-black text-white"
@@ -299,13 +299,13 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════
           FINAL CTA
           ══════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden py-36">
+      <section className="relative isolate overflow-hidden py-36">
         <div
-          className="absolute inset-0 -z-20 bg-cover bg-center ken-burns"
+          className="absolute inset-0 z-0 bg-cover bg-center ken-burns"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1488085061387-422e29b40080?w=1920&q=80')" }}
           aria-hidden
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0F3057]/95 via-[#0F3057]/85 to-[#C6A75E]/60" aria-hidden />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-br from-[#0F3057]/95 via-[#0F3057]/85 to-[#C6A75E]/60" aria-hidden />
 
         <div className="relative mx-auto max-w-3xl px-6 text-center text-white">
           <ScrollReveal direction="up">

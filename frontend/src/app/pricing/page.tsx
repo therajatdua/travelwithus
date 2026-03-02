@@ -77,7 +77,7 @@ export default function PricingPage() {
       {/* What's included */}
       <section className="py-16 px-6">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-2xl font-bold mb-8 text-center" style={{ color: "var(--heading)" }}>What's included in every package</h2>
+          <h2 className="text-2xl font-bold mb-8 text-center" style={{ color: "var(--heading)" }}>What&apos;s included in every package</h2>
           <div
             className="rounded-2xl p-8 grid sm:grid-cols-2 gap-4"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
