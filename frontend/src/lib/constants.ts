@@ -39,4 +39,3 @@ export const PROTECTED_PATTERNS = [/^\/packages\/[^/]+\/book$/] as const;
 /* ── Local Storage Keys ─────────────────────────────────────── */
 export const LS_COLOR_MODE = "travelwithus-color-mode";
 export const LS_AUTH_USER = "travelwithus-auth-user";
-export const DEMO_AUTH_COOKIE = "travelwithus-demo-auth";

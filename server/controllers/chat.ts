@@ -9,6 +9,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { hasValidAIKey } from "../services/ai";
+import { AIServiceError } from "../middlewares/errorHandler";
 
 const CHAT_SYSTEM_PROMPT = `You are Travyy, a friendly and enthusiastic AI travel assistant for TravelWithUs.
 You help users plan trips, answer questions about destinations, give packing tips, explain local customs, suggest food, and more.
@@ -38,13 +39,9 @@ export async function chatWithAI(
       return;
     }
 
-    /* If AI key not configured, return a static fallback */
+    /* Honest API: do not return mock responses */
     if (!hasValidAIKey()) {
-      res.json({
-        reply:
-          "AI is not configured on the server right now. In the meantime, check out our curated packages for Mumbai, Rio, Thailand, Italy, and Tokyo! — Travyy 🌍",
-      });
-      return;
+      throw new AIServiceError("AI service is not configured.", "AI_NOT_CONFIGURED", 503);
     }
 
     const apiKey = process.env.AI_API_KEY ?? "";
@@ -64,9 +61,16 @@ export async function chatWithAI(
       },
     });
 
-    const reply = response.text?.trim() ?? "Sorry, I couldn't generate a response. Please try again!";
+    const reply = response.text?.trim();
+    if (!reply) {
+      throw new AIServiceError("AI returned an empty response.", "AI_EMPTY_RESPONSE", 502);
+    }
     res.json({ reply });
   } catch (err) {
-    next(err);
+    if (err instanceof AIServiceError) {
+      next(err);
+      return;
+    }
+    next(new AIServiceError((err as Error).message, "AI_CHAT_FAILED", 502));
   }
 }

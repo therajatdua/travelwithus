@@ -23,8 +23,9 @@ export function AIHealthBadge() {
         setLatency(null);
         return;
       }
-      setStatus(body.ok === true ? "ok" : "degraded");
-      setLatency(body.latencyMs ?? null);
+      const isOk = body.status === "ok";
+      setStatus(isOk ? "ok" : "down");
+      setLatency(body.latency_ms ?? null);
     } catch {
       setStatus("down");
       setLatency(null);

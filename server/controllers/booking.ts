@@ -6,7 +6,7 @@
    GET  /:id → getBookingById  (auth, own booking only)
    ============================================================ */
 
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { getFirestore } from "../lib/firebase";
 import { generateItinerary } from "../services/ai";
 import type { BookingInput, UserPreferences, ApiResponse } from "../types";
@@ -38,6 +38,7 @@ function calculateTotalPrice(
 export const createBooking = async (
   req: Request,
   res: Response,
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const input = req.body as BookingInput;
@@ -74,7 +75,7 @@ export const createBooking = async (
       input.transportMode,
     );
 
-    /* 3. AI itinerary (non-blocking — we await but fall back gracefully) */
+    /* 3. AI itinerary (strict — no fallback responses) */
     const aiPrefs: UserPreferences = {
       destination: pkg.name,
       origin: input.originCity,
@@ -123,7 +124,7 @@ export const createBooking = async (
     const booking = bookingSnap.data()!;
 
     /* 5. Success response */
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       data: {
         booking_id:       bookingSnap.id,
@@ -134,11 +135,7 @@ export const createBooking = async (
       },
     } satisfies ApiResponse);
   } catch (err) {
-    console.error("[Booking] Unhandled error:", (err as Error).message);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error.",
-    } satisfies ApiResponse);
+    next(err);
   }
 };
 
@@ -147,6 +144,7 @@ export const createBooking = async (
 export const getUserBookings = async (
   req: Request,
   res: Response,
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -162,11 +160,7 @@ export const getUserBookings = async (
 
     res.json({ success: true, data } satisfies ApiResponse);
   } catch (err) {
-    console.error("[Booking] Unhandled error:", (err as Error).message);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error.",
-    } satisfies ApiResponse);
+    next(err);
   }
 };
 
@@ -175,10 +169,20 @@ export const getUserBookings = async (
 export const getBookingById = async (
   req: Request,
   res: Response,
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+    if (typeof id !== "string" || id.trim() === "") {
+      res.status(400).json({
+        success: false,
+        error: "Invalid booking id.",
+      } satisfies ApiResponse);
+      return;
+    }
 
     const db   = getFirestore();
     const snap = await db.collection("bookings").doc(id).get();
@@ -204,10 +208,6 @@ export const getBookingById = async (
 
     res.json({ success: true, data } satisfies ApiResponse);
   } catch (err) {
-    console.error("[Booking] Unhandled error:", (err as Error).message);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error.",
-    } satisfies ApiResponse);
+    next(err);
   }
 };

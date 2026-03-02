@@ -96,6 +96,9 @@ export function useBooking() {
         const json = await res.json();
 
         if (!res.ok || !json.success) {
+          if (res.status === 502 || res.status === 503) {
+            throw new Error("AI service is under high demand. Please try again in a moment.");
+          }
           /* Validation errors from Zod */
           if (json.details) {
             setValidationErrors(json.details);

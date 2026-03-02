@@ -16,6 +16,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useRouter } from "next/navigation";
 import { Country, State, City } from "country-state-city";
 import type { ICountry, IState, ICity } from "country-state-city";
 import { Button } from "@/components/atoms";
@@ -118,6 +119,7 @@ export default function BookingForm({
   priceUSD,
   accommodationName,
 }: BookingFormProps) {
+  const router = useRouter();
   /* ── State machine ────────────────────────────────────────── */
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -483,6 +485,7 @@ export default function BookingForm({
       if (result) {
         setBookingData(result);
         setIsConfirmed(true);
+        router.push(`/bookings/${result.booking_id}/confirmation`);
       }
     };
 

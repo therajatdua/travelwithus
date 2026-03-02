@@ -53,11 +53,20 @@ export async function pingAI(): Promise<{ ok: boolean; latencyMs: number; error?
   const { ai, model } = getAIConfig();
   const start = Date.now();
   try {
-    await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model,
-      contents: [{ role: "user", parts: [{ text: "ping" }] }],
-      config: { maxOutputTokens: 1 },
+      contents: [{ role: "user", parts: [{ text: "Respond with exactly: PONG" }] }],
+      config: { maxOutputTokens: 8, temperature: 0 },
     });
+    const text = (response.text ?? "").trim().toUpperCase();
+    const isPong = text === "PONG" || text.includes("PONG");
+    if (!isPong) {
+      return {
+        ok: false,
+        latencyMs: Date.now() - start,
+        error: `Unexpected AI ping response: ${response.text ?? "(empty)"}`,
+      };
+    }
     return { ok: true, latencyMs: Date.now() - start };
   } catch (err) {
     return {
@@ -76,6 +85,7 @@ export async function generateItinerary(
     throw new AIServiceError(
       "AI_API_KEY is not configured on the server.",
       "AI_NOT_CONFIGURED",
+      503,
     );
   }
 
@@ -111,11 +121,12 @@ export async function generateItinerary(
     throw new AIServiceError(
       `AI service error: ${msg}`,
       "AI_REQUEST_FAILED",
+      502,
     );
   }
 
   if (!raw?.trim()) {
-    throw new AIServiceError("Gemini returned an empty response.", "AI_EMPTY_RESPONSE");
+    throw new AIServiceError("Gemini returned an empty response.", "AI_EMPTY_RESPONSE", 502);
   }
 
   let parsed: AIResponse;
@@ -123,7 +134,7 @@ export async function generateItinerary(
     parsed = JSON.parse(raw) as AIResponse;
   } catch {
     console.error("[AI Engine] Invalid JSON from Gemini:", raw.slice(0, 200));
-    throw new AIServiceError("Gemini returned malformed JSON.", "AI_INVALID_JSON");
+    throw new AIServiceError("Gemini returned malformed JSON.", "AI_INVALID_JSON", 502);
   }
 
   /* Shape validation */
@@ -132,7 +143,7 @@ export async function generateItinerary(
     typeof parsed.vibe_score !== "number" ||
     !Array.isArray(parsed.suggested_addons)
   ) {
-    throw new AIServiceError("Gemini response did not match expected schema.", "AI_SCHEMA_MISMATCH");
+    throw new AIServiceError("Gemini response did not match expected schema.", "AI_SCHEMA_MISMATCH", 502);
   }
 
   return parsed;

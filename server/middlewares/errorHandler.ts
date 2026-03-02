@@ -14,10 +14,12 @@ import { ZodError } from "zod";
 /* ── Typed custom error ─────────────────────────────────────── */
 export class AIServiceError extends Error {
   readonly code: string;
-  constructor(message: string, code = "AI_UNAVAILABLE") {
+  readonly statusCode: number;
+  constructor(message: string, code = "AI_UNAVAILABLE", statusCode = 503) {
     super(message);
     this.name = "AIServiceError";
     this.code = code;
+    this.statusCode = statusCode;
   }
 }
 
@@ -49,7 +51,7 @@ export function errorHandler(
 
   /* AI service down */
   if (err instanceof AIServiceError) {
-    res.status(503).json({
+    res.status(err.statusCode).json({
       success: false,
       error: "AI service is temporarily unavailable. Please try again shortly.",
       code: err.code,
