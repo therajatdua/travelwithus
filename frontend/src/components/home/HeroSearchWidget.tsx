@@ -5,7 +5,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Country, City } from "country-state-city";
@@ -40,15 +40,15 @@ export function HeroSearchWidget() {
   const [tab, setTab]         = useState<Tab>("packages");
   const [showPax, setShowPax] = useState(false);
 
-  const { control, register, handleSubmit, watch, setValue, formState: { errors } } =
+  const { control, register, handleSubmit, setValue, formState: { errors } } =
     useForm<FormData>({
       resolver: zodResolver(schema),
       defaultValues: { countryCode: "", city: "", date: "", adults: 2, children: 0 },
     });
 
-  const selectedCountry = watch("countryCode");
-  const adults          = watch("adults");
-  const children        = watch("children");
+  const selectedCountry = useWatch({ control, name: "countryCode" });
+  const adults          = useWatch({ control, name: "adults" });
+  const children        = useWatch({ control, name: "children" });
 
   const allCountries = Country.getAllCountries();
   const cities       = selectedCountry ? (City.getCitiesOfCountry(selectedCountry) ?? []) : [];

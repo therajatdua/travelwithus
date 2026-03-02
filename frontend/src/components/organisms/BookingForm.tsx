@@ -13,7 +13,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -141,7 +141,6 @@ export default function BookingForm({
   });
 
   const {
-    watch,
     setValue,
     formState: { errors },
   } = form;
@@ -150,8 +149,8 @@ export default function BookingForm({
   const { submitBooking, isLoading, error: apiError } = useBooking();
 
   /* ── Dependent dropdown state ─────────────────────────────── */
-  const selectedCountry = watch("originCountry");
-  const selectedState = watch("originState");
+  const selectedCountry = useWatch({ control: form.control, name: "originCountry" });
+  const selectedState = useWatch({ control: form.control, name: "originState" });
 
   const [countries] = useState<ICountry[]>(() => Country.getAllCountries());
   const [states, setStates] = useState<IState[]>([]);
@@ -235,7 +234,8 @@ export default function BookingForm({
      STEP 1 — Origin (Dependent Dropdowns) & Transport
      ────────────────────────────────────────────────────────── */
   function StepOne() {
-    const transport = watch("transportMode");
+    const transport = useWatch({ control: form.control, name: "transportMode" });
+    const originCity = useWatch({ control: form.control, name: "originCity" });
 
     const validateAndNext = async () => {
       const valid = await form.trigger([
@@ -280,7 +280,7 @@ export default function BookingForm({
 
         <ThemedSelect
           label="City"
-          value={watch("originCity")}
+          value={originCity}
           onChange={(val) => setValue("originCity", val, { shouldValidate: true })}
           options={cities.map((c) => ({ value: c.name, label: c.name }))}
           placeholder={selectedState ? "Select city…" : "Select a state first"}
@@ -383,9 +383,9 @@ export default function BookingForm({
   }
 
   function StepTwo() {
-    const adults = watch("adults");
-    const children = watch("children");
-    const seniors = watch("seniors");
+    const adults = useWatch({ control: form.control, name: "adults" });
+    const children = useWatch({ control: form.control, name: "children" });
+    const seniors = useWatch({ control: form.control, name: "seniors" });
 
     const validateAndNext = async () => {
       const valid = await form.trigger(["adults", "children", "seniors"]);
