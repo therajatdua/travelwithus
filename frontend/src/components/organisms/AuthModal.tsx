@@ -9,13 +9,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Button, InputField } from "@/components/atoms";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase/client";
@@ -23,7 +22,6 @@ import { auth, db } from "@/lib/firebase/client";
 type Tab = "signin" | "signup";
 
 export default function AuthModal() {
-  const router = useRouter();
   const { isAuthenticated, isModalOpen, closeAuthModal } = useAuth();
 
   /* ── Local form state ─────────────────────────────────── */
@@ -72,22 +70,16 @@ export default function AuthModal() {
           return;
         }
 
-        /* Sign In */
-        const { user } = await signInWithEmailAndPassword(auth, email, password);
-
-        /* Check role for redirect */
-        const profileSnap = await getDoc(doc(db, "profiles", user.uid));
+        /* Sign In – admin redirect is handled by AuthContext automatically */
+        await signInWithEmailAndPassword(auth, email, password);
         closeAuthModal();
-        if (profileSnap.data()?.role === "admin") {
-          router.push("/admin/dashboard");
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Authentication failed.");
       } finally {
         setLoading(false);
       }
     },
-    [tab, email, password, confirmPassword, closeAuthModal, router],
+    [tab, email, password, confirmPassword, closeAuthModal],
   );
 
   /* ── Close on Escape key ──────────────────────────────── */

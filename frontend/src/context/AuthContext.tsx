@@ -13,13 +13,16 @@
 import {
   createContext,
   useContext,
+  useRef,
   useState,
   useCallback,
   useEffect,
   type ReactNode,
 } from "react";
 import { onIdTokenChanged, signOut, type User } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { doc, getDoc } from "firebase/firestore";
+import { useRouter, usePathname } from "next/navigation";
+import { auth, db } from "@/lib/firebase/client";
 
 interface AuthContextValue {
   /** Firebase User object, null when logged out */
@@ -44,10 +47,11 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /** Writes (or clears) the __session cookie used by middleware / Server Components. */
 function setSessionCookie(token: string | null) {
+  const isProd = process.env.NODE_ENV === "production";
   if (token) {
-    document.cookie = `__session=${token}; path=/; max-age=${60 * 60}; SameSite=Strict`;
+    document.cookie = `__session=${token}; path=/; max-age=${60 * 60}; SameSite=Lax${isProd ? "; Secure" : ""}`;
   } else {
-    document.cookie = "__session=; path=/; max-age=0; SameSite=Strict";
+    document.cookie = `__session=; path=/; max-age=0; SameSite=Lax${isProd ? "; Secure" : ""}`;
   }
 }
 
@@ -55,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading,    setIsLoading]    = useState(true);
   const [isModalOpen,  setIsModalOpen]  = useState(false);
+  const router      = useRouter();
+  const pathname    = usePathname();
+  /* track previous user to detect fresh login (null → user) */
+  const prevUserRef = useRef<User | null | undefined>(undefined);
 
   /* ── Subscribe to Firebase auth state + token refresh ──── */
   useEffect(() => {
@@ -62,14 +70,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         const token = await user.getIdToken();
         setSessionCookie(token);
+
+        /* ── Auto-redirect admin on fresh login ───────────── */
+        const freshLogin = prevUserRef.current === null;
+        if (freshLogin && !pathname.startsWith("/admin")) {
+          try {
+            const snap = await getDoc(doc(db, "profiles", user.uid));
+            if (snap.data()?.role === "admin") {
+              router.push("/admin/dashboard");
+            }
+          } catch {
+            // silently ignore – non-critical
+          }
+        }
       } else {
         setSessionCookie(null);
       }
+      prevUserRef.current = user ?? null;
       setFirebaseUser(user);
       setIsLoading(false);
     });
 
     return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Show auth modal when not logged in after load ──────── */
