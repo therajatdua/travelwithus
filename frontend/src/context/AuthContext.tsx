@@ -95,12 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Show auth modal when not logged in after load ──────── */
-  useEffect(() => {
-    if (!isLoading && !firebaseUser) {
-      setIsModalOpen(true);
-    }
-  }, [isLoading, firebaseUser]);
+  /* Auth modal is opened only by explicit user action (e.g. clicking Sign In). */
 
   const logout = useCallback(async () => {
     await signOut(auth);

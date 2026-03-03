@@ -256,6 +256,8 @@ Firestore profile document:
 12. Landing page light-mode readability fixed.
 13. Chatbot 502 UX fixed with graceful fallback responses.
 14. Header logo wired to `favicon.ico` and tab icon explicitly configured.
+15. Default theme changed to dark mode on first visit (user can switch to light).
+16. Removed auto-popup login modal — auth modal now opens only on explicit user action.
 
 ---
 
@@ -354,7 +356,7 @@ if (typeof id !== "string" || !id.trim()) { ... }
 
 **Fix**
 - removed auto mode from toggle.
-- default still follows system on first load.
+- default changed to dark mode on first visit.
 - toggle now cycles only Light ↔ Dark.
 
 ---
@@ -368,7 +370,17 @@ if (typeof id !== "string" || !id.trim()) { ... }
 
 ---
 
-## K) Git push failures (DNS/SSH)
+## L) Auth modal auto-popup blocking site preview
+**Issue**
+- Login modal opened automatically for unauthenticated users, blocking site preview.
+
+**Fix**
+- Removed the `useEffect` in `AuthContext` that auto-opened the modal.
+- Modal now only opens via explicit user action (e.g. clicking Sign In).
+
+---
+
+## M) Git push failures (DNS/SSH)
 **Errors seen during migration**
 - `Could not resolve host: github.com`
 - `Permission denied (publickey)`
