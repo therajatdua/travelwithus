@@ -40,7 +40,7 @@ export default function RootLayout({
         {/* Anti-FOUC: set data-mode BEFORE first paint so dark mode never flashes */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=localStorage.getItem("travelwithus-color-mode")||"system";var r=m;if(m==="system"){r=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-mode",r)}catch(e){document.documentElement.setAttribute("data-mode","light")}})()`,
+            __html: `(function(){try{var m=localStorage.getItem("travelwithus-color-mode");var r=m||"dark";document.documentElement.setAttribute("data-mode",r)}catch(e){document.documentElement.setAttribute("data-mode","dark")}})()`,
           }}
         />
       </head>

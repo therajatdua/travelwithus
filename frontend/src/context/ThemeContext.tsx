@@ -2,7 +2,7 @@
   ThemeContext – Dual-Axis Theme Engine
   ─────────────────────────────────────────────────────────────
   Axis 1  → ColorMode  (light | dark)
-          First visit follows OS preference by default.
+          First visit defaults to dark mode.
           Initial data-mode is set by a blocking <script> in
           layout.tsx to avoid FOUC.
   Axis 2  → CityTheme  (ThemeKey | null)
@@ -57,8 +57,8 @@ function getSavedMode(): "light" | "dark" | null {
 
 /** Read the data-mode the blocking <script> already set on <html> */
 function getInitialResolved(): "light" | "dark" {
-  if (typeof document === "undefined") return "light";
-  return (document.documentElement.getAttribute("data-mode") as "light" | "dark") || "light";
+  if (typeof document === "undefined") return "dark";
+  return (document.documentElement.getAttribute("data-mode") as "light" | "dark") || "dark";
 }
 
 /* ── Provider ───────────────────────────────────────────────── */
@@ -66,7 +66,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const savedMode = getSavedMode();
   /* Initialise from what the blocking script already applied —
      this avoids a flash between server-render and first hydration. */
-  const [colorMode, setColorModeState] = useState<ColorMode>(savedMode ?? getSystemPreference());
+  const [colorMode, setColorModeState] = useState<ColorMode>(savedMode ?? "dark");
   const [resolvedMode, setResolvedMode] = useState<"light" | "dark">(getInitialResolved);
   const [followSystem, setFollowSystem] = useState<boolean>(savedMode === null);
   const [theme, setThemeState] = useState<ThemeKey | null>(null);
